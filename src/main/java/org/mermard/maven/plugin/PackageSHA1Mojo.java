@@ -42,6 +42,7 @@ public class PackageSHA1Mojo extends AbstractMojo {
 	public void execute() throws MojoExecutionException {
 		File f = outputDirectory;
 
+		// 创建目录
 		if (f.exists()) {
 			this.deleteFile(f);
 			f.mkdirs();
@@ -49,9 +50,22 @@ public class PackageSHA1Mojo extends AbstractMojo {
 			f.mkdirs();
 		}
 
-		this.getLog().debug("计算sha1");
-		String sha1 = new SHA1().getDigestOfFile(packageEntity);
-		this.getLog().debug("计算出的sha1:" + sha1);
+		unzip();// 解压包
+
+		writeSHA1();// 写SHA1
+
+		zip();// 压缩包
+
+		// 删除目录
+		this.deleteFile(f);
+	}
+
+	/**
+	 * 解压包
+	 * 
+	 * @throws MojoExecutionException
+	 */
+	private void unzip() throws MojoExecutionException {
 
 		this.getLog().debug("开始解压" + packageEntity.getPath());
 		try {
@@ -63,6 +77,17 @@ public class PackageSHA1Mojo extends AbstractMojo {
 			throw new MojoExecutionException("解压出错 " + packageEntity.getPath(),
 					e1);
 		}
+	}
+
+	/**
+	 * 生成SHA1文件
+	 * 
+	 * @throws MojoExecutionException
+	 */
+	private void writeSHA1() throws MojoExecutionException {
+		this.getLog().debug("计算sha1");
+		String sha1 = new SHA1().getDigestOfFile(packageEntity);
+		this.getLog().debug("计算出的sha1:" + sha1);
 
 		this.getLog().debug("开始写入sha1文件");
 		File sha1FilePath = new File(outputDirectory.getPath() + "/"
@@ -91,6 +116,14 @@ public class PackageSHA1Mojo extends AbstractMojo {
 			}
 		}
 		this.getLog().debug("写入sha1文件完成");
+	}
+
+	/**
+	 * 压缩原包
+	 * 
+	 * @throws MojoExecutionException
+	 */
+	private void zip() throws MojoExecutionException {
 		this.getLog().debug("开始压缩");
 		try {
 			ZipFileUtil.zip(outputDirectory.getPath(), packageEntity.getPath());
@@ -101,8 +134,6 @@ public class PackageSHA1Mojo extends AbstractMojo {
 					+ outputDirectory.getPath(), e);
 		}
 		this.getLog().debug("压缩完成");
-
-		this.deleteFile(f);
 	}
 
 	/**
